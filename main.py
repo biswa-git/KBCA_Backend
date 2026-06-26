@@ -73,6 +73,11 @@ class UserResponse(BaseModel):
     full_name: str
     phone: Optional[str]
     address: Optional[str]
+    registration_status: bool = False
+    registered_adults: int = 0
+    registered_children_6_12: int = 0
+    registered_children_under_6: int = 0
+    amount_paid: int = 0
 
     class Config:
         from_attributes = True
