@@ -93,7 +93,6 @@ class ForgotPasswordRequest(BaseModel):
     email: str = Field(..., pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 class MeetupRegistrationConfirmation(BaseModel):
-    email: str = Field(..., pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
     adults: int = Field(..., ge=0)
     children_6_12: int = Field(..., ge=0)
     children_under_6: int = Field(..., ge=0)
@@ -149,23 +148,20 @@ def meetup_registration(
     request: Request,
     payload: MeetupRegistrationConfirmation,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
-    user = db.query(models.User).filter(models.User.email == payload.email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    user.registration_status = True
-    user.registered_adults = payload.adults
-    user.registered_children_6_12 = payload.children_6_12
-    user.registered_children_under_6 = payload.children_under_6
-    user.amount_paid = int(round(payload.amount_paid))
+    current_user.registration_status = True
+    current_user.registered_adults = payload.adults
+    current_user.registered_children_6_12 = payload.children_6_12
+    current_user.registered_children_under_6 = payload.children_under_6
+    current_user.amount_paid = int(round(payload.amount_paid))
     db.commit()
 
     background_tasks.add_task(
         send_registration_confirmation_email,
-        user.email,
-        user.full_name or user.email,
+        current_user.email,
+        current_user.full_name or current_user.email,
         payload.adults,
         payload.children_6_12,
         payload.children_under_6,
