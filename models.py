@@ -15,3 +15,8 @@ class User(Base):
     otp_expires_at = Column(DateTime, nullable=True)
     reset_token = Column(VARCHAR(72), nullable=True, index=True)
     reset_token_expires_at = Column(DateTime, nullable=True)
+    registration_status = Column(Boolean, default=False, nullable=False)
+    registered_adults = Column(Integer, default=0, nullable=False)
+    registered_children_6_12 = Column(Integer, default=0, nullable=False)
+    registered_children_under_6 = Column(Integer, default=0, nullable=False)
+    amount_paid = Column(Integer, default=0, nullable=False)

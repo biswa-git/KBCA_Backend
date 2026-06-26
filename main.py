@@ -20,7 +20,7 @@ from slowapi.errors import RateLimitExceeded
 import models
 from database import engine, get_db
 import auth
-from email_utils import send_otp_email, send_password_reset_email
+from email_utils import send_otp_email, send_password_reset_email, send_registration_confirmation_email
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -92,6 +92,13 @@ class VerifyOTP(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     email: str = Field(..., pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
+class MeetupRegistrationConfirmation(BaseModel):
+    email: str = Field(..., pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+    adults: int = Field(..., ge=0)
+    children_6_12: int = Field(..., ge=0)
+    children_under_6: int = Field(..., ge=0)
+    amount_paid: float = Field(..., ge=0)
+
 class ResetPasswordRequest(BaseModel):
     token: str = Field(min_length=32, max_length=50)
     new_password: str = Field(min_length=8, max_length=72)
@@ -136,6 +143,36 @@ def register(request: Request, user: UserCreate, background_tasks: BackgroundTas
     background_tasks.add_task(send_otp_email, user.email, otp)
     
     return {"message": "If the email is not verified, an OTP has been sent.", "email": user.email}
+
+@app.post("/meetup-registration")
+def meetup_registration(
+    request: Request,
+    payload: MeetupRegistrationConfirmation,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    user = db.query(models.User).filter(models.User.email == payload.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.registration_status = True
+    user.registered_adults = payload.adults
+    user.registered_children_6_12 = payload.children_6_12
+    user.registered_children_under_6 = payload.children_under_6
+    user.amount_paid = int(round(payload.amount_paid))
+    db.commit()
+
+    background_tasks.add_task(
+        send_registration_confirmation_email,
+        user.email,
+        user.full_name or user.email,
+        payload.adults,
+        payload.children_6_12,
+        payload.children_under_6,
+        payload.amount_paid,
+    )
+
+    return {"message": "Registration confirmed and email queued."}
 
 @app.post("/verify-otp", response_model=Token)
 @limiter.limit("10/minute")

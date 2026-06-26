@@ -94,3 +94,52 @@ def send_password_reset_email(to_email: str, reset_link: str, reset_token: str):
     </html>
     """
     send_resend_email(to_email, subject, body, "password reset email")
+
+
+def send_registration_confirmation_email(
+    to_email: str,
+    full_name: str,
+    adults: int,
+    children_6_12: int,
+    children_under_6: int,
+    amount_paid: float
+):
+    subject = "KBCA Meetup Registration Confirmation"
+    body = f"""
+    <html>
+      <body>
+        <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #111;">
+          <h2 style="color: #0a0a0a;">KBCA Meetup Registration Confirmation</h2>
+          <p>Dear {full_name or 'Participant'},</p>
+          <p>Thank you for your registration for the upcoming KBCA meetup. This is a formal confirmation of the details associated with your registration and payment.</p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Registration Status</td>
+              <td style="padding: 10px; border: 1px solid #ccc;">Confirmed</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Adults</td>
+              <td style="padding: 10px; border: 1px solid #ccc;">{adults}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Children (6–12 years)</td>
+              <td style="padding: 10px; border: 1px solid #ccc;">{children_6_12}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Children (Below 6 years)</td>
+              <td style="padding: 10px; border: 1px solid #ccc;">{children_under_6}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Amount Paid</td>
+              <td style="padding: 10px; border: 1px solid #ccc;">₹{amount_paid:.2f}</td>
+            </tr>
+          </table>
+          <p style="margin-top: 24px;">We look forward to welcoming you to the event.</p>
+          <p>Sincerely,</p>
+          <p><strong>KBCA Event Coordination Team</strong></p>
+          <p style="color: #555; font-size: 13px;">If you have any questions, please reply to this email or visit the KBCA website.</p>
+        </div>
+      </body>
+    </html>
+    """
+    send_resend_email(to_email, subject, body, "registration confirmation email")
