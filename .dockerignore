@@ -1,0 +1,32 @@
+# Secrets — NEVER bake into Docker image
+.env
+.env.*
+
+# Local databases
+*.db
+*.sqlite3
+
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Tests (not needed at runtime)
+tests/
+pytest.ini
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
