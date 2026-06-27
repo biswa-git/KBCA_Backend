@@ -20,3 +20,4 @@ class User(Base):
     registered_children_6_12 = Column(Integer, default=0, nullable=False)
     registered_children_under_6 = Column(Integer, default=0, nullable=False)
     amount_paid = Column(Integer, default=0, nullable=False)
+    cashfree_transaction_id = Column(VARCHAR(255), nullable=True)
