@@ -301,3 +301,29 @@ def test_cashfree_order_uses_dotenv_credentials(monkeypatch):
 
     assert response.status_code == 200
     assert response.json() == {"order_id": "order_123", "status": "OK"}
+
+
+def test_meetup_registration_stores_cashfree_transaction_id():
+    create_user(email="meetup@example.com", password="password123", is_verified=True)
+    token_response = auth.create_token_pair("meetup@example.com")
+
+    response = client.post(
+        "/meetup-registration",
+        headers={"Authorization": f"Bearer {token_response['access_token']}"},
+        json={
+            "adults": 2,
+            "children_6_12": 1,
+            "children_under_6": 0,
+            "amount_paid": 650,
+            "cashfree_transaction_id": "2211547434",
+        },
+    )
+
+    assert response.status_code == 200
+
+    db = TestingSessionLocal()
+    user = db.query(models.User).filter(models.User.email == "meetup@example.com").one()
+    assert user.registration_status is True
+    assert user.registered_adults == 2
+    assert user.cashfree_transaction_id == "2211547434"
+    db.close()
