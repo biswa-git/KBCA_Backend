@@ -182,6 +182,7 @@ def meetup_registration(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    print("Payload:", payload)
     current_user.registration_status = True
     current_user.registered_adults = payload.adults
     current_user.registered_children_6_12 = payload.children_6_12
@@ -189,7 +190,7 @@ def meetup_registration(
     current_user.amount_paid = int(round(payload.amount_paid))
     current_user.cashfree_transaction_id = payload.cashfree_transaction_id or current_user.cashfree_transaction_id
     db.commit()
-
+    
     background_tasks.add_task(
         send_registration_confirmation_email,
         current_user.email,
