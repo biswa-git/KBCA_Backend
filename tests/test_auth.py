@@ -11,6 +11,7 @@ os.environ["SECRET_KEY"] = "testsecret"
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["FRONTEND_URL"] = "https://frontend.example"
 
+import main
 from main import app, limiter
 from database import Base, get_db
 import models
@@ -272,3 +273,32 @@ def test_reset_password_weak_password():
         json={"token": "any-token", "new_password": "short"}
     )
     assert response.status_code == 422
+
+
+def test_cashfree_order_uses_dotenv_credentials(monkeypatch):
+    monkeypatch.delenv("CASHFREE_APP_ID", raising=False)
+    monkeypatch.delenv("CASHFREE_SECRET", raising=False)
+
+    main.load_dotenv()
+
+    class FakeResponse:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def json(self):
+            return self._payload
+
+    async def fake_post(self, url, headers, json):
+        assert headers["x-client-id"] == os.getenv("CASHFREE_APP_ID")
+        assert headers["x-client-secret"] == os.getenv("CASHFREE_SECRET")
+        return FakeResponse({"order_id": "order_123", "status": "OK"})
+
+    monkeypatch.setattr(main.httpx.AsyncClient, "post", fake_post)
+
+    response = client.post(
+        "/cashfree-orders",
+        json={"order_id": "order_123"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"order_id": "order_123", "status": "OK"}

@@ -12,6 +12,8 @@ import secrets
 import string
 import os
 from urllib.parse import urlencode
+import httpx
+from dotenv import load_dotenv
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -21,6 +23,8 @@ import models
 from database import engine, get_db
 import auth
 from email_utils import send_otp_email, send_password_reset_email, send_registration_confirmation_email
+
+load_dotenv()
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -336,3 +340,40 @@ def keep_alive(db: Session = Depends(get_db)):
         return {"status": "ok", "message": "Database is alive"}
     except Exception:
         raise HTTPException(status_code=500, detail="Database connection failed")
+
+@app.post("/cashfree-orders")
+async def create_cashfree_order(request: Request):
+    cashfree_app_id = os.getenv("CASHFREE_APP_ID")
+    cashfree_secret = os.getenv("CASHFREE_SECRET")
+    cashfree_api_version = os.getenv("CASHFREE_API_VERSION", "2023-08-01")
+
+    if not cashfree_app_id or not cashfree_secret:
+        raise HTTPException(status_code=500, detail="Cashfree credentials are not configured.")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid request body")
+
+    url = "https://sandbox.cashfree.com/pg/orders"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "x-client-id": cashfree_app_id,
+        "x-client-secret": cashfree_secret,
+        "x-api-version": cashfree_api_version,
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, headers=headers, json=payload)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        
+        try:
+            data = response.json()
+            if isinstance(data, dict) and "message" not in data and "error" in data:
+                data["message"] = data["error"]
+            return data
+        except Exception:
+            return response.text
