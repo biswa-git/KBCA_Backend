@@ -82,7 +82,6 @@ class UserResponse(BaseModel):
     registered_children_6_12: int = 0
     registered_children_under_6: int = 0
     amount_paid: int = 0
-    cashfree_transaction_id: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -343,11 +342,7 @@ def keep_alive(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Database connection failed")
 
 @app.post("/cashfree-orders")
-async def create_cashfree_order(
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
+async def create_cashfree_order(request: Request):
     cashfree_app_id = os.getenv("CASHFREE_APP_ID")
     cashfree_secret = os.getenv("CASHFREE_SECRET")
     cashfree_api_version = os.getenv("CASHFREE_API_VERSION", "2023-08-01")
@@ -377,13 +372,15 @@ async def create_cashfree_order(
         
         try:
             data = response.json()
-            if isinstance(data, dict):
-                cf_order_id = data.get("cf_order_id")
-                if cf_order_id:
-                    current_user.cashfree_transaction_id = cf_order_id
-                    db.commit()
-                if "message" not in data and "error" in data:
-                    data["message"] = data["error"]
+
+            #delete print
+            print("------------------------------------------------------------")
+            print(data)
+            print("------------------------------------------------------------")
+
+
+            if isinstance(data, dict) and "message" not in data and "error" in data:
+                data["message"] = data["error"]
             return data
         except Exception:
             return response.text
