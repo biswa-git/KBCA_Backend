@@ -182,7 +182,6 @@ def meetup_registration(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    print("Payload:", payload)
     current_user.registration_status = True
     current_user.registered_adults = payload.adults
     current_user.registered_children_6_12 = payload.children_6_12
