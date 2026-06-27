@@ -109,6 +109,7 @@ def send_registration_confirmation_email(
     <html>
       <body>
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #111;">
+          <h2 style="color: #c9a763;">কোন্ডাপুর বাঙালি সাংস্কৃতিক সংঘ</h2>
           <h2 style="color: #0a0a0a;">KBCA Meetup Registration Confirmation</h2>
           <p>Dear {full_name or 'Participant'},</p>
           <p>Thank you for your registration for the upcoming KBCA meetup. This is a formal confirmation of the details associated with your registration and payment.</p>
