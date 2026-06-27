@@ -276,10 +276,9 @@ def test_reset_password_weak_password():
 
 
 def test_cashfree_order_uses_dotenv_credentials(monkeypatch):
-    monkeypatch.delenv("CASHFREE_APP_ID", raising=False)
-    monkeypatch.delenv("CASHFREE_SECRET", raising=False)
-
-    main.load_dotenv()
+    monkeypatch.setenv("CASHFREE_APP_ID", "test_app_id")
+    monkeypatch.setenv("CASHFREE_SECRET", "test_secret")
+    monkeypatch.setenv("CASHFREE_API_VERSION", "2023-08-01")
 
     class FakeResponse:
         def __init__(self, payload):
