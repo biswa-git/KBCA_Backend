@@ -174,26 +174,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
-
-def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> Optional[models.User]:
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        return None
-
-    scheme, _, token = auth_header.partition(" ")
-    if scheme.lower() != "bearer" or not token:
-        return None
-
-    try:
-        payload = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            return None
-    except JWTError:
-        return None
-
-    return db.query(models.User).filter(models.User.email == email).first()
-
 @app.post("/meetup-registration")
 def meetup_registration(
     request: Request,
@@ -366,7 +346,7 @@ def keep_alive(db: Session = Depends(get_db)):
 async def create_cashfree_order(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[models.User] = Depends(get_current_user_optional),
+    current_user: models.User = Depends(get_current_user),
 ):
     cashfree_app_id = os.getenv("CASHFREE_APP_ID")
     cashfree_secret = os.getenv("CASHFREE_SECRET")
