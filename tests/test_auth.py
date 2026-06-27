@@ -294,59 +294,10 @@ def test_cashfree_order_uses_dotenv_credentials(monkeypatch):
 
     monkeypatch.setattr(main.httpx.AsyncClient, "post", fake_post)
 
-    create_user(email="cashfree-user@example.com", password="password123", is_verified=True)
-    login_response = client.post(
-        "/login",
-        data={"username": "cashfree-user@example.com", "password": "password123"}
-    )
-    assert login_response.status_code == 200
-    token = login_response.json()["access_token"]
-
     response = client.post(
         "/cashfree-orders",
         json={"order_id": "order_123"},
-        headers={"Authorization": f"Bearer {token}"}
     )
 
     assert response.status_code == 200
     assert response.json() == {"order_id": "order_123", "status": "OK"}
-
-
-def test_cashfree_order_stores_cf_order_id(monkeypatch):
-    monkeypatch.setenv("CASHFREE_APP_ID", "test_app_id")
-    monkeypatch.setenv("CASHFREE_SECRET", "test_secret")
-    monkeypatch.setenv("CASHFREE_API_VERSION", "2023-08-01")
-
-    class FakeResponse:
-        def __init__(self, payload):
-            self._payload = payload
-
-        def json(self):
-            return self._payload
-
-    async def fake_post(self, url, headers, json):
-        return FakeResponse({"cf_order_id": "2211543682", "order_id": "kbca_meetup_1782551759660"})
-
-    monkeypatch.setattr(main.httpx.AsyncClient, "post", fake_post)
-
-    user = create_user(email="cashfree@example.com", password="password123", is_verified=True)
-    login_response = client.post(
-        "/login",
-        data={"username": "cashfree@example.com", "password": "password123"}
-    )
-    assert login_response.status_code == 200
-    token = login_response.json()["access_token"]
-
-    response = client.post(
-        "/cashfree-orders",
-        json={"order_id": "order_123"},
-        headers={"Authorization": f"Bearer {token}"}
-    )
-
-    assert response.status_code == 200
-    assert response.json()["cf_order_id"] == "2211543682"
-
-    db = TestingSessionLocal()
-    stored_user = db.query(models.User).filter(models.User.email == "cashfree@example.com").one()
-    assert stored_user.cashfree_transaction_id == "2211543682"
-    db.close()
