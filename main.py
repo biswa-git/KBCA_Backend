@@ -78,7 +78,6 @@ class UserResponse(BaseModel):
     registered_children_6_12: int = 0
     registered_children_under_6: int = 0
     amount_paid: int = 0
-    cashfree_transaction_id: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -103,7 +102,6 @@ class MeetupRegistrationConfirmation(BaseModel):
     children_6_12: int = Field(..., ge=0)
     children_under_6: int = Field(..., ge=0)
     amount_paid: float = Field(..., ge=0)
-    cashfree_transaction_id: Optional[str] = None
 
 class ResetPasswordRequest(BaseModel):
     token: str = Field(min_length=32, max_length=50)
@@ -184,7 +182,6 @@ def meetup_registration(
     current_user.registered_children_6_12 = payload.children_6_12
     current_user.registered_children_under_6 = payload.children_under_6
     current_user.amount_paid = int(round(payload.amount_paid))
-    current_user.cashfree_transaction_id = payload.cashfree_transaction_id
     db.commit()
 
     background_tasks.add_task(
