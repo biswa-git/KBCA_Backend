@@ -30,3 +30,6 @@ Thumbs.db
 
 #backup py
 backup_db.py
+
+# Testing
+.pytest_cache/
