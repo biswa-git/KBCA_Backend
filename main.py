@@ -21,6 +21,11 @@ import models
 from database import engine, get_db
 import auth
 from email_utils import send_otp_email, send_password_reset_email, send_registration_confirmation_email
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -179,13 +184,23 @@ def meetup_registration(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    logger.info(f"📝 Meetup Registration Request from {current_user.email}")
+    logger.info(f"   Payload: {payload}")
+    logger.info(f"   Transaction ID: {payload.cashfree_transaction_id}")
+    
     current_user.registration_status = True
     current_user.registered_adults = payload.adults
     current_user.registered_children_6_12 = payload.children_6_12
     current_user.registered_children_under_6 = payload.children_under_6
     current_user.amount_paid = int(round(payload.amount_paid))
     current_user.cashfree_transaction_id = payload.cashfree_transaction_id
+    
+    logger.info(f"   Saving Transaction ID to DB: {current_user.cashfree_transaction_id}")
+    
     db.commit()
+    
+    logger.info(f"✅ Registration saved for {current_user.email}")
+    logger.info(f"   Confirmed Transaction ID in DB: {current_user.cashfree_transaction_id}")
 
     background_tasks.add_task(
         send_registration_confirmation_email,
