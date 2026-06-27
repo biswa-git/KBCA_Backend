@@ -372,6 +372,13 @@ async def create_cashfree_order(request: Request):
         
         try:
             data = response.json()
+
+            #delete print
+            print("------------------------------------------------------------")
+            print(data)
+            print("------------------------------------------------------------")
+
+
             if isinstance(data, dict) and "message" not in data and "error" in data:
                 data["message"] = data["error"]
             return data
