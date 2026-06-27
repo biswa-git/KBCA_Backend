@@ -5,13 +5,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from datetime import timedelta, datetime
 from jose import jwt, JWTError
 import secrets
 import string
 import os
-import json
 from urllib.parse import urlencode
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -110,49 +109,6 @@ class MeetupRegistrationConfirmation(BaseModel):
     children_under_6: int = Field(..., ge=0)
     amount_paid: float = Field(..., ge=0)
     cashfree_transaction_id: Optional[str] = None
-
-    @field_validator("cashfree_transaction_id", mode="before")
-    @classmethod
-    def normalize_cashfree_transaction_id(cls, value):
-        if value is None:
-            return None
-
-        if isinstance(value, str):
-            stripped = value.strip()
-            if not stripped:
-                return None
-
-            if stripped.startswith("{") or stripped.startswith("["):
-                try:
-                    parsed = json.loads(stripped)
-                except json.JSONDecodeError:
-                    return stripped
-                return cls._extract_transaction_id(parsed)
-
-            return stripped
-
-        if isinstance(value, dict):
-            return cls._extract_transaction_id(value)
-
-        return str(value)
-
-    @staticmethod
-    def _extract_transaction_id(value):
-        if isinstance(value, dict):
-            for key in ("transactionId", "transaction_id", "txnId", "cashfree_transaction_id", "cf_txn_id", "cf_order_id", "orderId", "id"):
-                candidate = value.get(key)
-                if isinstance(candidate, str) and candidate.strip():
-                    return candidate.strip()
-                if isinstance(candidate, (int, float)):
-                    return str(candidate)
-
-            nested = value.get("data")
-            if isinstance(nested, dict):
-                nested_id = MeetupRegistrationConfirmation._extract_transaction_id(nested)
-                if nested_id:
-                    return nested_id
-
-        return None
 
 class ResetPasswordRequest(BaseModel):
     token: str = Field(min_length=32, max_length=50)
