@@ -1,9 +1,12 @@
+import logging
 import os
 import json
 import urllib.request
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 # Resend requires verified domains for production. 
@@ -13,7 +16,7 @@ SENDER_EMAIL = os.getenv("SENDER_EMAIL", "onboarding@resend.dev")
 
 def send_resend_email(to_email: str, subject: str, html: str, email_label: str):
     if not RESEND_API_KEY:
-        print(f"Warning: RESEND_API_KEY not set. Cannot send {email_label}.", flush=True)
+        logger.warning("RESEND_API_KEY not set. Cannot send %s.", email_label)
         return
 
     url = "https://api.resend.com/emails"
@@ -34,11 +37,11 @@ def send_resend_email(to_email: str, subject: str, html: str, email_label: str):
         req = urllib.request.Request(url, data=json.dumps(data).encode("utf-8"), headers=headers, method="POST")
         with urllib.request.urlopen(req) as response:  # nosec B310
             response.read()
-            print(f"{email_label} successfully sent via Resend to {to_email}!", flush=True)
+            logger.info("%s successfully sent via Resend to %s.", email_label, to_email)
     except Exception as e:
-        print(f"Error sending {email_label} via Resend: {e}", flush=True)
+        logger.exception("Error sending %s via Resend: %s", email_label, e)
         if hasattr(e, 'read'):
-            print(f"Resend error details: {e.read().decode('utf-8')}", flush=True)
+            logger.error("Resend error details: %s", e.read().decode('utf-8'))
 
 
 def send_otp_email(to_email: str, otp: str):

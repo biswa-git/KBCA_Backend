@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import Optional
 from pydantic import BaseModel, Field
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from jose import jwt, JWTError
+import logging
 import secrets
 import string
 import os
@@ -26,7 +27,16 @@ from email_utils import send_otp_email, send_password_reset_email, send_registra
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
+
+
+def _normalize_datetime(value: Optional[datetime]) -> Optional[datetime]:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
 
 # Disable interactive API docs in production to reduce attack surface
 _IS_DEV = os.getenv("ENVIRONMENT", "production").lower() == "development"
@@ -72,6 +82,8 @@ class UserCreate(BaseModel):
     address: Optional[str] = None
 
 class UserResponse(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     email: str
     full_name: str
@@ -82,9 +94,6 @@ class UserResponse(BaseModel):
     registered_children_6_12: int = 0
     registered_children_under_6: int = 0
     amount_paid: int = 0
-
-    class Config:
-        from_attributes = True
 
 class Token(BaseModel):
     access_token: str
@@ -124,7 +133,7 @@ def register(request: Request, user: UserCreate, background_tasks: BackgroundTas
         )
     
     otp = ''.join(secrets.choice(string.digits) for _ in range(6))
-    otp_expires = datetime.utcnow() + timedelta(minutes=10)
+    otp_expires = datetime.now(timezone.utc) + timedelta(minutes=10)
     hashed_password = auth.get_password_hash(user.password)
     hashed_otp = auth.get_password_hash(otp)
 
@@ -211,7 +220,7 @@ def verify_otp(request: Request, verify_data: VerifyOTP, db: Session = Depends(g
         raise HTTPException(status_code=400, detail="Invalid verification request")
     if not auth.verify_password(verify_data.otp, user.otp_code):
         raise HTTPException(status_code=400, detail="Invalid verification request")
-    if not user.otp_expires_at or user.otp_expires_at < datetime.utcnow():
+    if not user.otp_expires_at or _normalize_datetime(user.otp_expires_at) < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Invalid verification request")
     
     # Verify successful
@@ -285,7 +294,7 @@ def forgot_password(
     if user and user.is_verified:
         raw_token = secrets.token_urlsafe(32)
         hashed_token = auth.get_password_hash(raw_token)
-        token_expires = datetime.utcnow() + timedelta(minutes=15)
+        token_expires = datetime.now(timezone.utc) + timedelta(minutes=15)
 
         user.reset_token = hashed_token
         user.reset_token_expires_at = token_expires
@@ -306,9 +315,10 @@ def reset_password(
 ):
     """Validate reset token and update password."""
     # Scan only users with a pending reset token for timing attack mitigation
+    now = datetime.now(timezone.utc)
     users_with_token = db.query(models.User).filter(
         models.User.reset_token.isnot(None),
-        models.User.reset_token_expires_at > datetime.utcnow()
+        models.User.reset_token_expires_at > now
     ).all()
 
     if not users_with_token:
@@ -374,12 +384,6 @@ async def create_cashfree_order(request: Request):
         
         try:
             data = response.json()
-
-            #delete print
-            print("------------------------------------------------------------")
-            print(data)
-            print("------------------------------------------------------------")
-
 
             if isinstance(data, dict) and "message" not in data and "error" in data:
                 data["message"] = data["error"]
