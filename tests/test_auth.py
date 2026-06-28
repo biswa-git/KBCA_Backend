@@ -193,10 +193,9 @@ def test_forgot_password_existing_unverified_user():
 def test_forgot_password_reset_link_includes_token(monkeypatch):
     sent = {}
 
-    def fake_send_password_reset_email(to_email: str, reset_link: str, reset_token: str):
+    def fake_send_password_reset_email(to_email: str, reset_link: str):
         sent["to_email"] = to_email
         sent["reset_link"] = reset_link
-        sent["reset_token"] = reset_token
 
     monkeypatch.setattr("main.send_password_reset_email", fake_send_password_reset_email)
     create_user(email="forgot@example.com", is_verified=True)
@@ -207,7 +206,7 @@ def test_forgot_password_reset_link_includes_token(monkeypatch):
     assert sent["to_email"] == "forgot@example.com"
     parsed = urlparse(sent["reset_link"])
     assert f"{parsed.scheme}://{parsed.netloc}{parsed.path}" == "https://frontend.example/reset-password"
-    assert parse_qs(parsed.query)["token"] == [sent["reset_token"]]
+    assert parse_qs(parsed.query)["token"]
 
 
 def test_reset_password_invalid_token():

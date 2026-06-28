@@ -64,7 +64,7 @@ def send_otp_email(to_email: str, otp: str):
     send_resend_email(to_email, subject, body, "OTP email")
 
 
-def send_password_reset_email(to_email: str, reset_link: str, reset_token: str):
+def send_password_reset_email(to_email: str, reset_link: str):
     subject = "Reset Your KBCA Account Password"
     body = f"""
     <html>
@@ -81,12 +81,8 @@ def send_password_reset_email(to_email: str, reset_link: str, reset_token: str):
               RESET PASSWORD
             </a>
           </div>
-          <p style="color: #888; font-size: 13px;">
-            Your reset token is:<br/>
-            <strong style="font-size: 16px; letter-spacing: 2px;">{reset_token}</strong>
-          </p>
           <p style="color: #888; font-size: 13px; margin-top: 16px;">
-            Enter this token on the reset page to complete your password change.
+            Use the button above to continue with the password reset process.
           </p>
           <p style="color: #888; font-size: 13px;">
             If you did not request a password reset, please ignore this email.

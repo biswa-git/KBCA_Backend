@@ -301,7 +301,7 @@ def forgot_password(
         db.commit()
 
         reset_link = f"{FRONTEND_URL.rstrip('/')}/reset-password?{urlencode({'token': raw_token})}"
-        background_tasks.add_task(send_password_reset_email, user.email, reset_link, raw_token)
+        background_tasks.add_task(send_password_reset_email, user.email, reset_link)
 
     return {"message": "If that email is registered, a password reset link has been sent."}
 
