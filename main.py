@@ -482,17 +482,11 @@ async def create_cashfree_order(
             "customer_id": str(current_user.id),
             "customer_email": current_user.email,
             "customer_phone": phone,
-            "customer_name": current_user.full_name or current_user.email,
         },
         "order_meta": {
             "return_url": payload.return_url or FRONTEND_URL,
         },
-        "order_note": "KBCA meetup registration",
-        "order_tags": {
-            "adults": str(payload.adults),
-            "children_6_12": str(payload.children_6_12),
-            "children_under_6": str(payload.children_under_6),
-        },
+        "order_note": f"KBCA meetup registration - {payload.adults} adult(s), {payload.children_6_12} child(ren) 6-12, {payload.children_under_6} child(ren) under 6",
     }
 
     async with httpx.AsyncClient(timeout=15) as client:
