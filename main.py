@@ -65,6 +65,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.kbcahyd.co.in")
+ALLOWED_RETURN_URLS = {"https://www.kbcahyd.co.in", "https://kbcahyd.co.in", "http://localhost:5173", "http://localhost:3000"}
 ADULT_RATE = 250
 CHILD_6_12_RATE = 150
 MAX_ATTENDEES_PER_REGISTRATION = 20
@@ -386,7 +387,8 @@ def refresh_token(request: Request, refresh_data: RefreshTokenRequest, db: Sessi
 
 
 @app.get("/me", response_model=UserResponse)
-def read_users_me(current_user: models.User = Depends(get_current_user)):
+@limiter.limit("60/minute")
+def read_users_me(request: Request, current_user: models.User = Depends(get_current_user)):
     return current_user
 
 @app.post("/forgot-password")
@@ -470,6 +472,12 @@ async def create_cashfree_order(
     current_user: models.User = Depends(get_current_user),
 ):
     _validate_attendee_count(payload.adults, payload.children_6_12, payload.children_under_6)
+    
+    # Validate return_url against whitelist
+    return_url = payload.return_url or FRONTEND_URL
+    if return_url not in ALLOWED_RETURN_URLS:
+        raise HTTPException(status_code=400, detail="Invalid return URL.")
+    
     amount = _registration_amount(payload.adults, payload.children_6_12)
     order_id = f"kbca_{current_user.id}_{secrets.token_urlsafe(12)}"
     phone = _normalize_phone(current_user.phone)
@@ -484,7 +492,7 @@ async def create_cashfree_order(
             "customer_phone": phone,
         },
         "order_meta": {
-            "return_url": payload.return_url or FRONTEND_URL,
+            "return_url": return_url,
         },
         "order_note": f"KBCA meetup registration - {payload.adults} adult(s), {payload.children_6_12} child(ren) 6-12, {payload.children_under_6} child(ren) under 6",
     }
