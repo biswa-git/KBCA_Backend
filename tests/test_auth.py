@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlparse
 
 # Set environment variables for testing
-os.environ["SECRET_KEY"] = "testsecret"
+os.environ["SECRET_KEY"] = "testsecret-with-at-least-32-bytes"
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["FRONTEND_URL"] = "https://frontend.example"
 
@@ -278,8 +278,12 @@ def test_cashfree_order_uses_dotenv_credentials(monkeypatch):
     monkeypatch.setenv("CASHFREE_APP_ID", "test_app_id")
     monkeypatch.setenv("CASHFREE_SECRET", "test_secret")
     monkeypatch.setenv("CASHFREE_API_VERSION", "2023-08-01")
+    user = create_user(email="payer@example.com", password="password123", is_verified=True, phone="9876543210")
+    token_response = auth.create_token_pair("payer@example.com", user.hashed_password)
 
     class FakeResponse:
+        status_code = 200
+
         def __init__(self, payload):
             self._payload = payload
 
@@ -287,24 +291,50 @@ def test_cashfree_order_uses_dotenv_credentials(monkeypatch):
             return self._payload
 
     async def fake_post(self, url, headers, json):
+        assert url == "https://sandbox.cashfree.com/pg/orders"
         assert headers["x-client-id"] == os.getenv("CASHFREE_APP_ID")
         assert headers["x-client-secret"] == os.getenv("CASHFREE_SECRET")
-        return FakeResponse({"order_id": "order_123", "status": "OK"})
+        assert json["order_amount"] == 650.0
+        assert json["customer_details"]["customer_id"] == str(user.id)
+        assert json["customer_details"]["customer_phone"] == "9876543210"
+        return FakeResponse({"order_id": json["order_id"], "payment_session_id": "session_123", "status": "OK"})
 
     monkeypatch.setattr(main.httpx.AsyncClient, "post", fake_post)
 
     response = client.post(
         "/cashfree-orders",
-        json={"order_id": "order_123"},
+        headers={"Authorization": f"Bearer {token_response['access_token']}"},
+        json={"adults": 2, "children_6_12": 1, "children_under_6": 0, "return_url": "https://frontend.example"},
     )
 
     assert response.status_code == 200
-    assert response.json() == {"order_id": "order_123", "status": "OK"}
+    assert response.json()["payment_session_id"] == "session_123"
 
 
-def test_meetup_registration_stores_cashfree_transaction_id():
-    create_user(email="meetup@example.com", password="password123", is_verified=True)
-    token_response = auth.create_token_pair("meetup@example.com")
+def test_meetup_registration_stores_cashfree_transaction_id(monkeypatch):
+    user = create_user(email="meetup@example.com", password="password123", is_verified=True)
+    token_response = auth.create_token_pair("meetup@example.com", user.hashed_password)
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {
+                "order_id": "order_123",
+                "order_status": "PAID",
+                "order_amount": 650,
+                "customer_details": {"customer_id": str(user.id)},
+            }
+
+    async def fake_get(self, url, headers):
+        assert url == "https://sandbox.cashfree.com/pg/orders/order_123"
+        assert headers["x-client-id"] == os.getenv("CASHFREE_APP_ID")
+        assert headers["x-client-secret"] == os.getenv("CASHFREE_SECRET")
+        return FakeResponse()
+
+    monkeypatch.setenv("CASHFREE_APP_ID", "test_app_id")
+    monkeypatch.setenv("CASHFREE_SECRET", "test_secret")
+    monkeypatch.setattr(main.httpx.AsyncClient, "get", fake_get)
 
     response = client.post(
         "/meetup-registration",
@@ -313,8 +343,7 @@ def test_meetup_registration_stores_cashfree_transaction_id():
             "adults": 2,
             "children_6_12": 1,
             "children_under_6": 0,
-            "amount_paid": 650,
-            "cashfree_transaction_id": "2211547434",
+            "cashfree_order_id": "order_123",
         },
     )
 
@@ -324,5 +353,6 @@ def test_meetup_registration_stores_cashfree_transaction_id():
     user = db.query(models.User).filter(models.User.email == "meetup@example.com").one()
     assert user.registration_status is True
     assert user.registered_adults == 2
-    assert user.cashfree_transaction_id == "2211547434"
+    assert user.amount_paid == 650
+    assert user.cashfree_transaction_id == "order_123"
     db.close()

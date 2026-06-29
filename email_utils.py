@@ -2,6 +2,7 @@ import logging
 import os
 import json
 import urllib.request
+from html import escape
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -44,6 +45,10 @@ def send_resend_email(to_email: str, subject: str, html: str, email_label: str):
             logger.error("Resend error details: %s", e.read().decode('utf-8'))
 
 
+def _html(value) -> str:
+    return escape(str(value), quote=True)
+
+
 def send_otp_email(to_email: str, otp: str):
     subject = "Your KBCA Account Verification Code"
     body = f"""
@@ -74,7 +79,7 @@ def send_password_reset_email(to_email: str, reset_link: str):
           <p>We received a request to reset the password for your KBCA account.</p>
           <p>Click the button below to go to the password reset page. This reset token will expire in <strong>15 minutes</strong>.</p>
           <div style="text-align: center; margin: 32px 0;">
-            <a href="{reset_link}"
+            <a href="{_html(reset_link)}"
                style="background-color: #c9a763; color: #0a0a0a; padding: 14px 32px;
                       text-decoration: none; font-weight: bold; font-size: 14px;
                       letter-spacing: 1px; display: inline-block;">
@@ -110,7 +115,7 @@ def send_registration_confirmation_email(
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #111;">
           <h2 style="color: #c9a763;">কোন্ডাপুর বাঙালি সাংস্কৃতিক সংঘ</h2>
           <h2 style="color: #0a0a0a;">KBCA Meetup Registration Confirmation</h2>
-          <p>Dear {full_name or 'Participant'},</p>
+          <p>Dear {_html(full_name or 'Participant')},</p>
           <p>Thank you for your registration for the upcoming KBCA meetup. This is a formal confirmation of the details associated with your registration and payment.</p>
           <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
             <tr>
@@ -119,15 +124,15 @@ def send_registration_confirmation_email(
             </tr>
             <tr>
               <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Adults</td>
-              <td style="padding: 10px; border: 1px solid #ccc;">{adults}</td>
+              <td style="padding: 10px; border: 1px solid #ccc;">{_html(adults)}</td>
             </tr>
             <tr>
               <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Children (6–12 years)</td>
-              <td style="padding: 10px; border: 1px solid #ccc;">{children_6_12}</td>
+              <td style="padding: 10px; border: 1px solid #ccc;">{_html(children_6_12)}</td>
             </tr>
             <tr>
               <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Children (Below 6 years)</td>
-              <td style="padding: 10px; border: 1px solid #ccc;">{children_under_6}</td>
+              <td style="padding: 10px; border: 1px solid #ccc;">{_html(children_under_6)}</td>
             </tr>
             <tr>
               <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Amount Paid</td>
