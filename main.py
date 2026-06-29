@@ -13,7 +13,7 @@ import logging
 import secrets
 import string
 import os
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 import httpx
 from dotenv import load_dotenv
 
@@ -69,6 +69,16 @@ ALLOWED_RETURN_URLS = {"https://www.kbcahyd.co.in", "https://kbcahyd.co.in", "ht
 ADULT_RATE = 250
 CHILD_6_12_RATE = 150
 MAX_ATTENDEES_PER_REGISTRATION = 20
+
+
+def _validate_return_url(url: str) -> bool:
+    """Validate return_url by checking origin (scheme + netloc) against whitelist."""
+    try:
+        parsed = urlparse(url)
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+        return origin in ALLOWED_RETURN_URLS
+    except Exception:
+        return False
 
 
 def _cashfree_base_url() -> str:
@@ -475,7 +485,7 @@ async def create_cashfree_order(
     
     # Validate return_url against whitelist
     return_url = payload.return_url or FRONTEND_URL
-    if return_url not in ALLOWED_RETURN_URLS:
+    if not _validate_return_url(return_url):
         raise HTTPException(status_code=400, detail="Invalid return URL.")
     
     amount = _registration_amount(payload.adults, payload.children_6_12)
