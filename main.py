@@ -335,6 +335,7 @@ async def meetup_registration(
         payload.children_6_12,
         payload.children_under_6,
         expected_amount,
+        current_user.muhurat_code,
     )
 
     return {"message": "Registration confirmed and email queued.", "muhurat_code": current_user.muhurat_code}

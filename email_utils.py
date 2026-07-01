@@ -3,6 +3,7 @@ import os
 import json
 import urllib.request
 from html import escape
+from urllib.parse import quote
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,6 +48,11 @@ def send_resend_email(to_email: str, subject: str, html: str, email_label: str):
 
 def _html(value) -> str:
     return escape(str(value), quote=True)
+
+
+def _build_qr_code_url(value: str, size: int = 320) -> str:
+    encoded_value = quote(str(value), safe='')
+    return f"https://api.qrserver.com/v1/create-qr-code/?size={size}x{size}&data={encoded_value}&margin=2&ecc=M&format=png&bgcolor=ffffff&color=000000"
 
 
 def send_otp_email(to_email: str, otp: str):
@@ -106,9 +112,20 @@ def send_registration_confirmation_email(
     adults: int,
     children_6_12: int,
     children_under_6: int,
-    amount_paid: float
+    amount_paid: float,
+    muhurat_code: str | None = None,
 ):
     subject = "KBCA Meetup Registration Confirmation"
+    qr_block = ""
+    if muhurat_code:
+        qr_url = _build_qr_code_url(muhurat_code)
+        qr_block = f"""
+          <div style="margin: 28px 0; text-align: center;">
+            <p style="font-weight: 600; margin-bottom: 12px;">Your registration QR code</p>
+            <img src="{_html(qr_url)}" alt="Registration QR Code" style="max-width: 220px; width: 100%; border: 1px solid #e2c27d; border-radius: 12px; padding: 10px; background: #fff;" />
+          </div>
+        """
+
     body = f"""
     <html>
       <body>
@@ -139,6 +156,7 @@ def send_registration_confirmation_email(
               <td style="padding: 10px; border: 1px solid #ccc;">₹{amount_paid:.2f}</td>
             </tr>
           </table>
+          {qr_block}
           <p style="margin-top: 24px;">We look forward to welcoming you to the event.</p>
           <p>Sincerely,</p>
           <p><strong>KBCA Event Coordination Team</strong></p>
