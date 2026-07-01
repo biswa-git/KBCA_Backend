@@ -166,6 +166,7 @@ class UserResponse(BaseModel):
     registered_children_under_6: int = 0
     amount_paid: int = 0
     founding_member: bool = False
+    muhurat_code: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
@@ -315,6 +316,15 @@ async def meetup_registration(
     current_user.registered_children_under_6 = payload.children_under_6
     current_user.amount_paid = expected_amount
     current_user.cashfree_transaction_id = order_id
+    # Ensure a unique muhurat code is assigned to the user for their registration
+    if not getattr(current_user, 'muhurat_code', None):
+        # Try generating a unique, sufficiently complex code
+        for _ in range(6):
+            candidate = secrets.token_urlsafe(24)
+            exists = db.query(models.User).filter(models.User.muhurat_code == candidate).first()
+            if not exists:
+                current_user.muhurat_code = candidate
+                break
     db.commit()
     
     background_tasks.add_task(
@@ -327,7 +337,7 @@ async def meetup_registration(
         expected_amount,
     )
 
-    return {"message": "Registration confirmed and email queued."}
+    return {"message": "Registration confirmed and email queued.", "muhurat_code": current_user.muhurat_code}
 
 @app.post("/verify-otp", response_model=Token)
 @limiter.limit("10/minute")

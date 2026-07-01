@@ -22,3 +22,4 @@ class User(Base):
     amount_paid = Column(Integer, default=0, nullable=False)
     cashfree_transaction_id = Column(VARCHAR(255), nullable=True)
     founding_member = Column(Boolean, default=False, nullable=False)
+    muhurat_code = Column(VARCHAR(128), nullable=True, unique=True, index=True)
