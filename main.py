@@ -165,6 +165,7 @@ class UserResponse(BaseModel):
     registered_children_6_12: int = 0
     registered_children_under_6: int = 0
     amount_paid: int = 0
+    founding_member: bool = False
 
 class Token(BaseModel):
     access_token: str
