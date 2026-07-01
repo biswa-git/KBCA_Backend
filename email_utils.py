@@ -142,28 +142,30 @@ def send_registration_confirmation_email(
     rows.append(row("Children (Below 6 years)", str(children_under_6)))
     rows.append(row("Amount Paid", f"₹{amount_paid:.2f}"))
 
-    details_rows = "".join(rows)
+    # Join rows with newlines to avoid creating very long unbroken lines
+    details_rows = "\n".join(rows)
 
+    # Build the HTML with explicit newlines to avoid client clipping caused by long lines
     body = (
-        "<html>"
-        "<body>"
-        "<div style=\"font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #111;\">"
-        "<h2 style=\"color: #c9a763;\">কোন্ডাপুর বাঙালি সাংস্কৃতিক সংঘ</h2>"
-        "<h2 style=\"color: #0a0a0a;\">KBCA Meetup Registration Confirmation</h2>"
-        f"<p>Dear {_html(full_name or 'Participant')},</p>"
-        "<p>Thank you for your registration for the upcoming KBCA meetup. This is a formal confirmation of the details associated with your registration and payment.</p>"
-        "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"border-collapse:collapse;margin:24px 0 0 0;font-size:15px;line-height:1.5;\">"
-        "<tbody>"
-        f"{details_rows}"
-        "</tbody>"
-        "</table>"
-        f"{qr_block}"
-        "<p style=\"margin-top:24px;\">We look forward to welcoming you to the event.</p>"
-        "<p>Sincerely,</p>"
-        "<p><strong>KBCA Event Coordination Team</strong></p>"
-        "<p style=\"color:#555;font-size:13px;\">If you have any questions, please reply to this email or visit the KBCA website.</p>"
-        "</div>"
-        "</body>"
-        "</html>"
+      "<html>\n"
+      "<body>\n"
+      "<div style=\"font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #111;\">\n"
+      "<h2 style=\"color: #c9a763;\">কোন্ডাপুর বাঙালি সাংস্কৃতিক সংঘ</h2>\n"
+      "<h2 style=\"color: #0a0a0a;\">KBCA Meetup Registration Confirmation</h2>\n"
+      f"<p>Dear {_html(full_name or 'Participant')},</p>\n"
+      "<p>Thank you for your registration for the upcoming KBCA meetup. This is a formal confirmation of the details associated with your registration and payment.</p>\n"
+      "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"border-collapse:collapse;margin:24px 0 0 0;font-size:15px;line-height:1.5;\">\n"
+      "<tbody>\n"
+      f"{details_rows}\n"
+      "</tbody>\n"
+      "</table>\n"
+      f"{qr_block}\n"
+      "<p style=\"margin-top:24px;\">We look forward to welcoming you to the event.</p>\n"
+      "<p>Sincerely,</p>\n"
+      "<p><strong>KBCA Event Coordination Team</strong></p>\n"
+      "<p style=\"color:#555;font-size:13px;\">If you have any questions, please reply to this email or visit the KBCA website.</p>\n"
+      "</div>\n"
+      "</body>\n"
+      "</html>\n"
     )
     send_resend_email(to_email, subject, body, "registration confirmation email")
