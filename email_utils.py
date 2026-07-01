@@ -126,6 +126,31 @@ def send_registration_confirmation_email(
           </div>
         """
 
+    details_rows = "\n".join([
+        f"""
+            <tr>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Registration Status</td>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">Confirmed</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Adults</td>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">{_html(adults)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Children (6–12 years)</td>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">{_html(children_6_12)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Children (Below 6 years)</td>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">{_html(children_under_6)}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Amount Paid</td>
+              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">₹{amount_paid:.2f}</td>
+            </tr>
+        """
+    ])
+
     body = f"""
     <html>
       <body>
@@ -134,27 +159,10 @@ def send_registration_confirmation_email(
           <h2 style="color: #0a0a0a;">KBCA Meetup Registration Confirmation</h2>
           <p>Dear {_html(full_name or 'Participant')},</p>
           <p>Thank you for your registration for the upcoming KBCA meetup. This is a formal confirmation of the details associated with your registration and payment.</p>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Registration Status</td>
-              <td style="padding: 10px; border: 1px solid #ccc;">Confirmed</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Adults</td>
-              <td style="padding: 10px; border: 1px solid #ccc;">{_html(adults)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Children (6–12 years)</td>
-              <td style="padding: 10px; border: 1px solid #ccc;">{_html(children_6_12)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Children (Below 6 years)</td>
-              <td style="padding: 10px; border: 1px solid #ccc;">{_html(children_under_6)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; border: 1px solid #ccc; font-weight: bold;">Amount Paid</td>
-              <td style="padding: 10px; border: 1px solid #ccc;">₹{amount_paid:.2f}</td>
-            </tr>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; margin: 24px 0 0 0; font-size: 15px; line-height: 1.5;">
+            <tbody>
+              {details_rows}
+            </tbody>
           </table>
           {qr_block}
           <p style="margin-top: 24px;">We look forward to welcoming you to the event.</p>
