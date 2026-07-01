@@ -65,7 +65,14 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.kbcahyd.co.in")
-ALLOWED_RETURN_URLS = {"https://www.kbcahyd.co.in", "https://kbcahyd.co.in", "http://localhost:5173", "http://localhost:3000"}
+# Allow configured frontend URL in the whitelist (tests set FRONTEND_URL to https://frontend.example)
+ALLOWED_RETURN_URLS = {
+    FRONTEND_URL.rstrip('/'),
+    "https://www.kbcahyd.co.in",
+    "https://kbcahyd.co.in",
+    "http://localhost:5173",
+    "http://localhost:3000",
+}
 ADULT_RATE = 250
 CHILD_6_12_RATE = 150
 MAX_ATTENDEES_PER_REGISTRATION = 20
