@@ -126,51 +126,44 @@ def send_registration_confirmation_email(
           </div>
         """
 
-    details_rows = "\n".join([
-        f"""
-            <tr>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Registration Status</td>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">Confirmed</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Adults</td>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">{_html(adults)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Children (6–12 years)</td>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">{_html(children_6_12)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Children (Below 6 years)</td>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">{_html(children_under_6)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; font-weight: 700; background-color: #faf6eb;">Amount Paid</td>
-              <td style="padding: 12px 10px; border: 1px solid #e5d7a0; background-color: #ffffff;">₹{amount_paid:.2f}</td>
-            </tr>
-        """
-    ])
+    # Build table rows programmatically for clarity and better email-client compatibility
+    rows = []
+    def row(label, value):
+        return (
+            f"<tr>"
+            f"<td style=\"padding:12px 10px;border:1px solid #e5d7a0;font-weight:700;background-color:#faf6eb;vertical-align:top;width:45%;\">{_html(label)}</td>"
+            f"<td style=\"padding:12px 10px;border:1px solid #e5d7a0;background-color:#ffffff;vertical-align:top;width:55%;\">{_html(value)}</td>"
+            f"</tr>"
+        )
 
-    body = f"""
-    <html>
-      <body>
-        <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #111;">
-          <h2 style="color: #c9a763;">কোন্ডাপুর বাঙালি সাংস্কৃতিক সংঘ</h2>
-          <h2 style="color: #0a0a0a;">KBCA Meetup Registration Confirmation</h2>
-          <p>Dear {_html(full_name or 'Participant')},</p>
-          <p>Thank you for your registration for the upcoming KBCA meetup. This is a formal confirmation of the details associated with your registration and payment.</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; margin: 24px 0 0 0; font-size: 15px; line-height: 1.5;">
-            <tbody>
-              {details_rows}
-            </tbody>
-          </table>
-          {qr_block}
-          <p style="margin-top: 24px;">We look forward to welcoming you to the event.</p>
-          <p>Sincerely,</p>
-          <p><strong>KBCA Event Coordination Team</strong></p>
-          <p style="color: #555; font-size: 13px;">If you have any questions, please reply to this email or visit the KBCA website.</p>
-        </div>
-      </body>
-    </html>
-    """
+    rows.append(row("Registration Status", "Confirmed"))
+    rows.append(row("Adults", str(adults)))
+    rows.append(row("Children (6–12 years)", str(children_6_12)))
+    rows.append(row("Children (Below 6 years)", str(children_under_6)))
+    rows.append(row("Amount Paid", f"₹{amount_paid:.2f}"))
+
+    details_rows = "".join(rows)
+
+    body = (
+        "<html>"
+        "<body>"
+        "<div style=\"font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; color: #111;\">"
+        "<h2 style=\"color: #c9a763;\">কোন্ডাপুর বাঙালি সাংস্কৃতিক সংঘ</h2>"
+        "<h2 style=\"color: #0a0a0a;\">KBCA Meetup Registration Confirmation</h2>"
+        f"<p>Dear {_html(full_name or 'Participant')},</p>"
+        "<p>Thank you for your registration for the upcoming KBCA meetup. This is a formal confirmation of the details associated with your registration and payment.</p>"
+        "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"border-collapse:collapse;margin:24px 0 0 0;font-size:15px;line-height:1.5;\">"
+        "<tbody>"
+        f"{details_rows}"
+        "</tbody>"
+        "</table>"
+        f"{qr_block}"
+        "<p style=\"margin-top:24px;\">We look forward to welcoming you to the event.</p>"
+        "<p>Sincerely,</p>"
+        "<p><strong>KBCA Event Coordination Team</strong></p>"
+        "<p style=\"color:#555;font-size:13px;\">If you have any questions, please reply to this email or visit the KBCA website.</p>"
+        "</div>"
+        "</body>"
+        "</html>"
+    )
     send_resend_email(to_email, subject, body, "registration confirmation email")
